@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: colorart-api
+    runtime: python
+    plan: standard
+    region: frankfurt
+    buildCommand: python -m pip install -r requirements.lock
+    startCommand: python -m uvicorn atelier:create_app --factory --host 0.0.0.0 --port "$PORT" --workers 1 --proxy-headers --forwarded-allow-ips '*'
+    healthCheckPath: /api/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.14
+      - key: COLORART_DATA_DIR
+        value: /var/data/colorart
+      - key: OMP_NUM_THREADS
+        value: '2'
+      - key: OPENBLAS_NUM_THREADS
+        value: '2'
+    disk:
+      name: colorart-data
+      mountPath: /var/data
+      sizeGB: 10

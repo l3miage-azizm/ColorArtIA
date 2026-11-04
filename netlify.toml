@@ -1,0 +1,11 @@
+[build]
+  command = "node deployment/build-netlify.mjs"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+[[headers]]
+  for = "/api/*"
+  [headers.values]
+    Cache-Control = "no-store"
