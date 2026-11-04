@@ -21,6 +21,25 @@ python atelier.py
 
 Ouvrir l’adresse indiquée dans le terminal. `app.py` est le point d’entrée Vercel, pas la commande de lancement local. Les fichiers locaux sont placés dans `data/` par défaut. Une connexion au fournisseur de dessin est nécessaire pour créer de nouvelles illustrations. Les clés doivent rester dans les variables du serveur.
 
+## Obtenir le rendu de la planche de référence
+
+Choisir « Fidèle à la photo » avec « Dessin illustré · rendu de référence » :
+le service crée d’abord une illustration en aplats en conservant la scène,
+puis le moteur prépare le coloriage mystère à 32 couleurs, détail minutieux,
+environ 3 200 zones et guides séparés pour les petits codes.
+
+Ce mode est le choix initial, même lorsque le service n’est pas encore activé :
+l’atelier signale alors l’indisponibilité et conserve la photo sans lancer
+d’étude de découpage de remplacement. L’étude locale reste un choix explicite
+dans les réglages avancés ; elle ne crée pas l’illustration de la planche.
+Les dessins déjà sauvegardés restent réutilisables sans nouvel appel au fournisseur.
+
+Le rendu illustré nécessite une clé fournisseur configurée sur le serveur
+(`COLORART_IMAGE_API_KEY` pour le fournisseur OpenAI par défaut).
+La planche JPEG montre le style attendu ; les photos originales en pleine
+résolution sont nécessaires pour vérifier de nouveaux rendus. La ressemblance
+doit être contrôlée visuellement après une génération réelle.
+
 ## Vercel
 
 La configuration utilise FastAPI, un pont Node vers un stockage Blob privé et l’identité OIDC renouvelée à chaque requête. Voir `VERCEL.md` pour le stockage et `RENDU_REFERENCE.md` pour l’état du rendu.

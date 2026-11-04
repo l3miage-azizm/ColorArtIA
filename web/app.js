@@ -46,7 +46,7 @@ function validUniverse(key) {
 }
 function isIllustrated(variant) { return variant?.config?.artwork_mode === 'premium' || universeParts(variant?.universe).art !== 'original'; }
 function useNewDrawingDefaults() {
-  $('#artwork-mode').value = state.catalog.premium_enabled ? 'premium' : 'local';
+  $('#artwork-mode').value = 'premium';
   $('#colors-select').value = '32'; $('#difficulty-select').value = 'expert';
   $('#regions-select').value = '3200'; $('#masking-select').value = 'mystery';
 }
@@ -326,7 +326,7 @@ function renderUniverseRail(page, desired) {
     const queued = !!state.queuedGeneration && !!page && state.queuedGeneration.pageId === page.id && state.queuedGeneration.universe === key;
     const failed = page && state.failedChoices.has(choiceKey(page.id, key, renderConfig(key)));
     const unavailable = item.kind === 'artistic' && !artisticAvailable(item.key) && !sameSceneVariant(page, key) && !reusableIllustration(page, key);
-    const note = processing ? 'Création en cours…' : queued ? 'Votre prochain choix' : failed ? 'Toucher pour réessayer' : ready ? (favoriteValue(ready) ? '♥ Coup de cœur' : 'Prêt à afficher') : unavailable ? 'Service à activer' : colors ? 'Toucher pour appliquer' : item.key === 'original' ? 'La photo comme référence' : 'Créer cet univers';
+    const note = processing ? 'Création en cours…' : queued ? 'Votre prochain choix' : failed ? 'Toucher pour réessayer' : ready ? (favoriteValue(ready) ? '♥ Coup de cœur' : 'Prêt à afficher') : unavailable ? 'Service à activer' : colors ? 'Toucher pour appliquer' : item.key === 'original' ? 'Créer le dessin fidèle' : 'Créer cet univers';
     const accent = /^#[0-9a-f]{3,8}$/i.test(item.accent || '') ? item.accent : universeColors[index % universeColors.length];
     const label = colors && item.key === 'original' ? 'Couleurs d’origine' : item.label;
     return `<button class="universe-choice${item.kind === 'artistic' ? ' universe-choice-art' : ''}${unavailable ? ' is-unavailable' : ''}" data-universe="${escapeHTML(key)}" type="button" aria-pressed="${active}" ${unavailable ? 'aria-disabled="true"' : ''} ${!page ? 'disabled' : ''}><span class="universe-swatch" style="--universe-color:${accent}" aria-hidden="true">${colors ? '' : item.key === 'original' ? '✧' : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3"><path d="M4 17.5 9 11l4 4 3-3 4 5.5M4 19h16M17 4v5m-2.5-2.5h5"/><circle cx="7" cy="6" r="2"/></svg>'}</span><span class="universe-choice-copy"><span class="universe-choice-name">${escapeHTML(label)}${item.is_new && !colors ? '<span class="universe-new">Nouveau</span>' : ''}</span><span class="universe-choice-note">${escapeHTML(note)}</span></span></button>`;
@@ -347,8 +347,10 @@ function requestUniverse(universe, { force = false } = {}) {
   const page = currentPage(); if (!page || !validUniverse(universe)) return;
   const config = renderConfig(universe), seq = ++choiceSequence;
   const ready = !force && findMatchingVariant(page, universe, config), { art } = universeParts(universe);
-  if (!ready && !artisticAvailable(art) && !reusableIllustration(page, universe) && (force || !sameSceneVariant(page, universe, config))) {
-    state.universeNotice = 'La création des univers artistiques nécessite l’activation du service artistique de cet atelier. Vos photos et vos dessins restent disponibles.';
+  const needsIllustration = config.artwork_mode === 'premium' || art !== 'original';
+  const serviceAvailable = art === 'original' ? !!state.catalog.premium_enabled : artisticAvailable(art);
+  if (!ready && needsIllustration && !serviceAvailable && !reusableIllustration(page, universe) && (force || !sameSceneVariant(page, universe, config))) {
+    state.universeNotice = 'Le rendu de référence nécessite l’activation du service de dessin illustré. Votre photo est conservée ; vos dessins enregistrés restent disponibles.';
     renderUniverseDescription(); toast(state.universeNotice, true, 7000); return;
   }
   state.universeNotice = '';
@@ -1013,7 +1015,10 @@ function bindEvents() {
     $('#artwork-mode').value = 'premium';
     requestUniverse(desiredUniverse(currentPage()));
   });
-  $('#artwork-mode').addEventListener('change', () => renderPhotos());
+  $('#artwork-mode').addEventListener('change', () => {
+    state.universeNotice = '';
+    renderPhotos(); renderUniverseDescription();
+  });
   $('#universe-select').addEventListener('change', () => requestUniverse($('#universe-select').value));
   $('#universe-rail').addEventListener('click', event => { const button = event.target.closest('[data-universe]'); if (button) requestUniverse(button.dataset.universe); });
   $$('[data-universe-tab]').forEach((button, index, buttons) => {
@@ -1142,10 +1147,13 @@ function renderUniverseDescription() {
     ? `${art === 'original' ? 'Fidèle à la photo' : universeLabel(art)} · ${palette === 'original' ? 'Couleurs d’origine.' : paletteDescription}`
     : `${artDescription}${palette === 'original' ? '' : ` Couleurs : ${universeLabel(palette)}.`}`);
   const available = !!(state.catalog.artistic_enabled ?? state.catalog.premium_enabled);
-  $('#artwork-mode-note').textContent = available
-    ? 'Chaque univers artistique crée un nouveau dessin et son décor. Comparez les visages et l’expression avant de choisir votre page.'
-    : 'La création de nouveaux dessins illustrés nécessite l’activation du service. Vos dessins enregistrés, leurs couleurs et les études de découpage restent disponibles.';
-  $('#artwork-mode-note').classList.toggle('service-unavailable', !available);
+  const localStudy = art === 'original' && $('#artwork-mode').value === 'local';
+  $('#artwork-mode-note').textContent = localStudy
+    ? 'L’étude de découpage utilise directement les couleurs de la photo. Pour obtenir le dessin de référence, choisissez « Dessin illustré » dans les réglages avancés.'
+    : available
+    ? 'Pour le rendu de référence, choisissez « Fidèle à la photo » : illustration en aplats, puis coloriage mystère et guides de détails. Comparez les visages et l’expression avant de choisir votre page.'
+    : 'Le rendu de référence attend l’activation du service de dessin illustré. Vos photos et dessins enregistrés restent disponibles. L’étude de découpage se choisit dans les réglages avancés.';
+  $('#artwork-mode-note').classList.toggle('service-unavailable', !available && !localStudy);
 }
 
 async function init() {
@@ -1153,8 +1161,6 @@ async function init() {
   try {
     const [catalog, projects] = await Promise.all([api('/api/catalog'), api('/api/books')]);
     state.catalog = catalog; state.books = projects.books || [];
-    const premium = !!catalog.premium_enabled;
-    $('#artwork-mode option[value="premium"]').disabled = !premium;
     useNewDrawingDefaults();
     $('#universe-select').innerHTML = (catalog.universes || []).map(item => `<option value="${escapeHTML(item.key)}">${escapeHTML(item.label)}</option>`).join('');
     renderUniverseDescription(); renderProjects(); renderProgress(); renderUniverseRail(null, 'original');

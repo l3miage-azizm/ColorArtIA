@@ -15,13 +15,16 @@ from io import BytesIO
 from PIL import Image
 _buffer=BytesIO();Image.new('RGB',(256,384),(227,212,189)).save(_buffer,format='PNG');IMAGE=_buffer.getvalue()
 REPORT={'scope':'Chromium UI tests with mocked API responses, no AI quality or service activation claim','checks':[]}
-async def case(browser,*,available=True,legacy=False,old_premium=False):
+async def case(browser,*,available=True,legacy=False,old_premium=False,cached_premium=False):
  context=await browser.new_context(viewport={'width':1440,'height':1100}); page=await context.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
  book=copy.deepcopy(BASE);catalog=copy.deepcopy(CATALOG);catalog['premium_enabled']=available;catalog['artistic_enabled']=available
  for u in catalog['universes']:
   if u.get('kind')=='artistic':u['available']=available
  calls=[]
- if legacy:book['pages'][0]['variants']=[{'id':'c'*32,'universe':'original','config':{'artwork_mode':'local','n_colors':24,'difficulty':'balanced','fit_mode':'contain','target_regions':3200,'masking':'mystery'},'files':{'solution_final':'/fixture.png','mystery':'/fixture.png','detail_guides':'/api/guide.pdf'},'quality':{}}]
+ if legacy or cached_premium:book['pages'][0]['variants']=[{'id':'c'*32,'universe':'original','config':{'artwork_mode':'local','n_colors':24,'difficulty':'balanced','fit_mode':'contain','target_regions':3200,'masking':'mystery'},'files':{'solution_final':'/fixture.png','mystery':'/fixture.png','detail_guides':'/api/guide.pdf'},'quality':{}}]
+ if cached_premium:
+  book['pages'][0]['variants'][0]['config'].update(artwork_mode='premium',art_universe='original',n_colors=32,difficulty='expert',preserve_details=True)
+  book['pages'][0]['variants'][0]['files']['source']='/fixture.png'
  if old_premium:
   book['pages'][0]['variants'][0]['config']['artwork_mode']='premium'
   book['pages'][0]['variants'][0]['config']['art_universe']='art_fairy'
@@ -52,7 +55,16 @@ async def case(browser,*,available=True,legacy=False,old_premium=False):
  assert await page.locator('[data-universe]').count()==19
  assert await page.locator('.universe-new').count()==15
  assert await page.locator('#universe-tab-artistic').get_attribute('aria-selected')=='true'
- if old_premium:
+ if cached_premium:
+  assert await page.locator('#artwork-mode').input_value()=='premium'
+  await page.locator('[data-universe="original"]').click();await page.wait_for_timeout(400)
+  assert not calls
+  assert 'Dessin illustré enregistré' in await page.locator('#result-caption').inner_text()
+  await page.locator('#universe-tab-colors').click()
+  await page.locator('[data-universe="ocean"]').click()
+  await page.wait_for_function("document.querySelector('#result-caption').textContent.includes('Dessin illustré enregistré') && document.querySelector('#result-caption').textContent.includes('océan')")
+  assert len(calls)==1 and calls[0]['artwork_mode']=='premium'
+ elif old_premium:
   assert await page.locator('#create-premium-button').is_visible()
   assert 'Restaurer les détails' in await page.locator('#create-premium-button').inner_text()
   await page.locator('#create-premium-button').click()
@@ -62,6 +74,7 @@ async def case(browser,*,available=True,legacy=False,old_premium=False):
   await page.wait_for_function("document.querySelector('#generation-progress').hidden && document.querySelector('#create-premium-button').hidden")
   assert calls[0]['artwork_mode']=='premium'
  elif legacy:
+  assert await page.locator('#artwork-mode').input_value()=='local'
   assert 'ÉTUDE DE DÉCOUPAGE' in await page.locator('#result-label').inner_text()
   assert await page.locator('#drawing-kind-note').is_visible()
   assert await page.locator('#detail-guide-link').is_visible()
@@ -71,6 +84,8 @@ async def case(browser,*,available=True,legacy=False,old_premium=False):
    assert calls[0]['artwork_mode']=='premium'
  elif available:
   assert await page.locator('#artwork-mode').input_value()=='premium'
+  await page.locator('[data-universe="original"]').click();await page.wait_for_function("document.querySelector('#result-caption').textContent.includes('Dessin illustré enregistré')")
+  assert len(calls)==1 and all(calls[0][key]==value for key,value in {'universe':'original','artwork_mode':'premium','n_colors':32,'difficulty':'expert','target_regions':3200,'masking':'mystery'}.items())
   await page.locator('[data-universe="art_fairy"]').click();await page.wait_for_function("document.querySelector('#result-caption').textContent.includes('Dessin illustré enregistré')")
   assert calls[-1]['artwork_mode']=='premium' and calls[-1]['n_colors']==32 and calls[-1]['difficulty']=='expert'
   await page.locator('#universe-tab-colors').click();assert await page.locator('[data-universe]').count()==len(UNIVERSES)
@@ -84,18 +99,35 @@ async def case(browser,*,available=True,legacy=False,old_premium=False):
   before=len(calls);await page.locator('#favorite-current').click();await page.wait_for_function("document.querySelector('#favorite-current').getAttribute('aria-pressed')==='true'");assert len(calls)==before
   REPORT['cached_variant_display_ms']=cached_ms
  else:
+  assert await page.locator('#artwork-mode').input_value()=='premium'
+  assert await page.locator('#artwork-mode option[value="premium"]').is_enabled()
+  await page.locator('[data-universe="original"]').click();await page.wait_for_timeout(400)
+  assert not calls
+  assert await page.locator('#artwork-mode').input_value()=='premium'
+  assert 'activation' in await page.locator('#universe-description').inner_text()
+  await page.locator('#universe-tab-colors').click()
+  await page.locator('[data-universe="ocean"]').click();await page.wait_for_timeout(400)
+  assert not calls
+  assert await page.locator('#artwork-mode').input_value()=='premium'
+  assert 'activation' in await page.locator('#universe-description').inner_text()
+  await page.locator('#universe-tab-artistic').click()
   await page.locator('[data-universe="art_fairy"]').click(force=True);await page.wait_for_timeout(400);assert not calls
   assert 'activation' in await page.locator('#universe-description').inner_text()
+  await page.locator('.studio-advanced').evaluate('(element) => element.open = true')
+  await page.locator('#artwork-mode').select_option('local')
+  await page.locator('[data-universe="original"]').click()
+  await page.wait_for_function("document.querySelector('#result-caption').textContent.includes('Étude de découpage enregistrée')")
+  assert len(calls)==1 and calls[0]['artwork_mode']=='local'
  for width in [360,390,768,1440]:
   await page.set_viewport_size({'width':width,'height':1100});await page.wait_for_timeout(50)
   assert await page.evaluate('document.documentElement.scrollWidth<=window.innerWidth'),width
  assert not errors,errors
- REPORT['checks'].append({'available':available,'legacy':legacy,'old_premium':old_premium,'passed':True,'generation_calls':len(calls),'console_errors':errors,'widths':[360,390,768,1440]})
+ REPORT['checks'].append({'available':available,'legacy':legacy,'old_premium':old_premium,'cached_premium':cached_premium,'passed':True,'generation_calls':len(calls),'console_errors':errors,'widths':[360,390,768,1440]})
  await context.close()
 async def main():
  async with async_playwright() as p:
   browser=await p.chromium.launch(executable_path='/usr/bin/chromium',headless=True,args=['--no-sandbox','--disable-dev-shm-usage'])
-  await case(browser,available=True);await case(browser,available=False);await case(browser,available=True,legacy=True);await case(browser,available=False,legacy=True);await case(browser,available=True,legacy=True,old_premium=True);await case(browser,available=False,legacy=True,old_premium=True)
+  await case(browser,available=True);await case(browser,available=False);await case(browser,available=True,legacy=True);await case(browser,available=False,legacy=True);await case(browser,available=True,legacy=True,old_premium=True);await case(browser,available=False,legacy=True,old_premium=True);await case(browser,available=False,cached_premium=True)
   await browser.close()
  report_path=ROOT/'artifacts/browser/art-ui-report.json';report_path.parent.mkdir(parents=True,exist_ok=True)
  report_path.write_text(json.dumps(REPORT,indent=2,ensure_ascii=False));print(json.dumps(REPORT,ensure_ascii=False))
