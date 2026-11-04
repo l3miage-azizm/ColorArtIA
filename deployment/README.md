@@ -12,7 +12,7 @@ La génération IA reste optionnelle : configurer `COLORART_IMAGE_API_KEY` dans 
 
 ## 2. Interface Netlify
 
-Importer ce dépôt dans Netlify, branche `main`. `netlify.toml` fournit la commande de construction et le dossier `dist`. Ajouter la variable **non secrète** `COLORART_BACKEND_URL` avec l’origine HTTPS du service Render, sans chemin. Puis déclencher le déploiement. La construction échoue explicitement si l’URL manque ou est invalide.
+Importer ce dépôt dans Netlify, branche `main`. `netlify.toml` fournit la commande de construction et le dossier `dist`. Ajouter la variable **non secrète** `COLORART_BACKEND_URL` avec l’origine HTTPS du service Render, sans chemin. Puis déclencher le déploiement. Si l’URL manque, la construction publie une page temporaire clairement signalée, sans création de livres ni enregistrement de photos. Configurer `COLORART_BACKEND_URL` puis redéployer active automatiquement l’interface complète et le proxy API. Une URL configurée mais invalide fait toujours échouer la construction.
 
 Pour vérifier la construction localement :
 
