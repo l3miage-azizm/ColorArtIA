@@ -1,0 +1,35 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python",
+      "config": {
+        "includeFiles": [
+          "core/**",
+          "cloud/**",
+          "web/**",
+          "atelier.py",
+          "assets/**"
+        ]
+      }
+    },
+    {
+      "src": "api/storage.mjs",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/storage/?",
+      "dest": "/api/storage.mjs"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/api/index.py"
+    }
+  ],
+  "regions": [
+    "cdg1"
+  ]
+}

@@ -1,0 +1,68 @@
+{
+  "scope": "Illustration-to-print segmentation and rendering; excludes external illustration generation/network/cloud upload. Profiled timings on same machine, same accepted drawing and settings.",
+  "source": "01_femme_lunettes/02_dessin_reference.png",
+  "config": {
+    "n_colors": 32,
+    "target_width": 2480,
+    "target_height": 3508,
+    "n_segments": 2000,
+    "compactness": 12.0,
+    "min_region_area": 85,
+    "mystery_line_gray": 190,
+    "mystery_number_min_scale": 0.4,
+    "mystery_number_max_scale": 0.68,
+    "outline_dark": 72,
+    "reveal_steps": [
+      0.25,
+      0.5,
+      0.75,
+      1.0
+    ],
+    "fit_mode": "contain",
+    "difficulty": "expert",
+    "seed": 42,
+    "working_width": 1240,
+    "max_source_pixels": 40000000,
+    "density": "rich",
+    "target_regions": 3200,
+    "preserve_ink": true,
+    "masking": "mystery",
+    "allow_rotated_codes": true
+  },
+  "before_seconds": 32.261,
+  "after_seconds": 22.872,
+  "reduction_percent": 29.1,
+  "quality_scope": "Exact output-preserving cache and crop fitting optimization. Separate new preserve_details pipeline changes geometry intentionally and is measured by tools/reference_regression.py.",
+  "proof": {
+    "02_mystere_total.png": {
+      "identical_pixels": true,
+      "sha256_before": "a339722b18a678efd8963dcb70e904f9da8f36c4b8100440ce208fae6a884f57",
+      "sha256_after": "a339722b18a678efd8963dcb70e904f9da8f36c4b8100440ce208fae6a884f57"
+    },
+    "03_solution_aplats.png": {
+      "identical_pixels": true,
+      "sha256_before": "997b564771b647a5655d34bf4a62ed841f81a299cca3c54b2ed4bf083248acff",
+      "sha256_after": "997b564771b647a5655d34bf4a62ed841f81a299cca3c54b2ed4bf083248acff"
+    },
+    "04_solution_finale_dessin.png": {
+      "identical_pixels": true,
+      "sha256_before": "38aa1cd4320a0ba72a20a8cfaf3006f8ff7ae3558fbdae368779f149bf5abe6c",
+      "sha256_after": "38aa1cd4320a0ba72a20a8cfaf3006f8ff7ae3558fbdae368779f149bf5abe6c"
+    },
+    "region_arrays": {
+      "labels": true,
+      "region_to_color": true,
+      "palette": true,
+      "ink_mask": true,
+      "ink_color": true,
+      "ink_composition": true
+    },
+    "printed_layouts_identical": true,
+    "quality_identical": true
+  },
+  "optimizations": [
+    "Bounded immutable glyph-fit stencil cache",
+    "Distance transforms only after a fitting glyph candidate exists",
+    "Physical reference_width for cropped region fitting instead of full-width zero-padding"
+  ]
+}

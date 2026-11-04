@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f3eb">
+  <title>ColorArt — L’atelier des cadeaux singuliers</title>
+  <meta name="description" content="Transformez vos souvenirs en livre de coloriage personnalisé. Comparez, composez et préparez un cadeau qui ne ressemble qu’à vous.">
+  <link rel="stylesheet" href="/static/style.css?v=art1">
+  <script defer src="/static/app.js?v=art1"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Aller à l’atelier</a>
+  <header class="topbar">
+    <a class="brand" href="/" aria-label="ColorArt, accueil"><span class="brand-monogram">C<span>A</span></span><span>ColorArt<small>LES SOUVENIRS PRENNENT COULEUR</small></span></a>
+    <div class="topbar-note"><span class="gold-dot"></span> Un livre à créer. Une émotion à offrir.</div>
+    <button id="help-button" class="button button-quiet" type="button">Comment ça marche <span aria-hidden="true">↗</span></button>
+  </header>
+
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Votre projet">
+      <div class="sidebar-heading"><span class="eyebrow">VOTRE ATELIER</span><span class="small-star" aria-hidden="true">✧</span></div>
+      <label for="project-select" class="label-small">Retrouver un livre</label>
+      <select id="project-select"><option value="">Nouveau livre</option></select>
+      <button id="new-book" class="new-project" type="button"><span aria-hidden="true">＋</span> Créer un autre livre</button>
+
+      <nav class="step-nav" aria-label="Étapes de création">
+        <button class="step active" data-step="1" type="button" aria-current="step"><span class="step-number">01</span><span>Le livre<small>Une collection à votre image</small></span><span class="step-check" aria-hidden="true"></span></button>
+        <button class="step" data-step="2" type="button"><span class="step-number">02</span><span>Les souvenirs<small>De la photo au dessin</small></span><span class="step-check" aria-hidden="true"></span></button>
+        <button class="step" data-step="3" type="button"><span class="step-number">03</span><span>La composition<small>Chaque page à sa place</small></span><span class="step-check" aria-hidden="true"></span></button>
+        <button class="step" data-step="4" type="button"><span class="step-number">04</span><span>Le cadeau<small>Les derniers détails</small></span><span class="step-check" aria-hidden="true"></span></button>
+      </nav>
+
+      <div class="sidebar-progress">
+        <div><span>Votre livre prend forme</span><strong id="sidebar-count">0 / 8</strong></div>
+        <progress id="book-progress" value="0" max="8" aria-label="Photos validées"></progress>
+        <p id="progress-caption">Choisissez votre collection pour commencer.</p>
+      </div>
+      <div class="sidebar-footer"><span class="save-indicator" id="save-dot"></span><span id="save-status" role="status">Vos créations, conservées dans cet atelier</span></div>
+    </aside>
+
+    <main id="main" tabindex="-1">
+      <div class="workspace-heading"><span id="stage-eyebrow" class="eyebrow">ÉTAPE 01 — LE LIVRE</span><span class="private-note"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M6 8V6a4 4 0 0 1 8 0v2M5 8h10v9H5z"/></svg> Votre projet est sauvegardé dans votre atelier</span></div>
+
+      <section id="stage-1" class="stage" aria-labelledby="title-1">
+        <div class="intro-row"><div><p class="overline">LE PLAISIR DE CRÉER. LA JOIE D’OFFRIR.</p><h1 id="title-1">Vos souvenirs.<br>Un cadeau <em>singulier.</em></h1><p class="lede">Un portrait, un voyage, un instant précieux. Composez un livre de coloriage qui raconte votre histoire, page après page.</p></div><div class="intro-seal" aria-hidden="true"><span>COLLECTION</span><strong>CA</strong><span>PERSONNELLE</span></div></div>
+
+        <form id="book-form">
+          <div class="section-heading"><div><h2>Choisissez l’écrin de votre histoire</h2><p>Trois collections, le même soin apporté à chaque souvenir.</p></div><span class="section-index">01 / 03</span></div>
+          <fieldset class="template-grid"><legend class="sr-only">Collection du livre</legend>
+            <label class="template-card"><input type="radio" name="template" value="heritage" checked><span class="template-scene heritage"><span class="book-spine"></span><span class="mini-book"><span class="book-kicker">COLLECTION COLORART</span><span class="book-rule"></span><span class="book-ornament">❦</span><span class="book-title">Les plus beaux<br>souvenirs</span><span class="book-illustration" aria-hidden="true">✧</span><span class="book-bottom">UNE HISTOIRE À COLORIER</span></span></span><span class="template-copy"><span><strong>Héritage</strong><small>Ivoire · Or · Intemporel</small></span><span class="radio-mark" aria-hidden="true"></span></span></label>
+            <label class="template-card"><input type="radio" name="template" value="nocturne"><span class="template-scene nocturne"><span class="book-spine"></span><span class="mini-book"><span class="book-kicker">COLLECTION COLORART</span><span class="book-rule"></span><span class="book-ornament">☾</span><span class="book-title">Les instants<br>précieux</span><span class="book-illustration" aria-hidden="true">✦</span><span class="book-bottom">UNE HISTOIRE À COLORIER</span></span></span><span class="template-copy"><span><strong>Nocturne</strong><small>Noir · Or · Raffiné</small></span><span class="radio-mark" aria-hidden="true"></span></span></label>
+            <label class="template-card"><input type="radio" name="template" value="botanique"><span class="template-scene botanique"><span class="book-spine"></span><span class="mini-book"><span class="book-kicker">COLLECTION COLORART</span><span class="book-rule"></span><span class="book-ornament">❧</span><span class="book-title">Les petits<br>bonheurs</span><span class="book-illustration" aria-hidden="true">❦</span><span class="book-bottom">UNE HISTOIRE À COLORIER</span></span></span><span class="template-copy"><span><strong>Botanique</strong><small>Sauge · Crème · Poétique</small></span><span class="radio-mark" aria-hidden="true"></span></span></label>
+          </fieldset>
+
+          <div class="section-heading spaced"><div><h2>Donnez-lui une touche personnelle</h2><p>Les mots qui rendront ce cadeau unique.</p></div><span class="section-index">02 / 03</span></div>
+          <div class="form-grid"><label>Le titre du livre<input id="book-title" name="title" maxlength="100" value="Nos plus beaux souvenirs" required placeholder="Ex. Les petits bonheurs de Louise"><small>Il apparaîtra sur votre couverture.</small></label><label>Pour qui est ce cadeau ?<input id="book-recipient" name="recipient" maxlength="80" placeholder="Prénom ou nom de famille"><small>Une attention rien que pour cette personne.</small></label><label class="full-width">Votre dédicace <span class="optional">facultatif</span><textarea id="book-dedication" name="dedication" maxlength="1200" rows="3" placeholder="Pour tous les instants que nous avons partagés, et ceux qu’il nous reste à inventer…"></textarea><small>Un message personnel au début du livre. Vous pourrez le modifier à tout moment.</small></label></div>
+
+          <div class="photo-count-panel"><div><span class="eyebrow">03 / 03 — VOTRE COLLECTION DE SOUVENIRS</span><h3>Combien de photos souhaitez-vous raconter ?</h3><p>Une photo devient une illustration à colorier. Les pages de présentation sont ajoutées séparément.</p></div><label class="count-label"><span class="sr-only">Nombre de photos souhaité</span><input id="target-photos" name="target_photos" type="number" min="1" max="40" value="8" required><span>photos</span></label></div>
+          <div class="stage-actions"><p class="subtle"><span aria-hidden="true">✧</span> Vous pourrez reprendre votre création plus tard.</p><button id="create-book" class="button button-primary" type="submit">Commencer mon livre <span aria-hidden="true">→</span></button></div>
+        </form>
+      </section>
+
+      <section id="stage-2" class="stage studio-stage" aria-labelledby="title-2" hidden>
+        <div class="page-title-row studio-intro"><div><p class="overline">UN SOUVENIR. VOTRE TOUCHE. UN CADEAU.</p><h1 id="title-2">Vos photos, <em>à votre image.</em></h1><p class="lede compact">Choisissez un univers à droite, comparez le dessin et gardez vos coups de cœur.</p></div><span class="count-badge" id="photo-count-badge">0 / 8 photos</span></div>
+        <div id="upload-zone" class="upload-zone studio-upload" tabindex="0" role="button" aria-label="Ajouter des photos ou déposer des fichiers"><span class="upload-icon" aria-hidden="true">＋</span><div><strong>Ajoutez vos photos</strong><p>Glissez-les ici ou <span class="text-link">parcourez vos souvenirs</span></p><small>JPEG, PNG et WebP · jusqu’à 20 Mo par photo</small></div><span class="upload-action" aria-hidden="true">Parcourir <span>↗</span></span><input id="photo-upload" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden></div>
+        <div id="upload-progress" class="inline-status" role="status" hidden></div>
+        <div id="photo-strip" class="photo-strip studio-photo-strip" aria-label="Choisir une photo"></div>
+        <div id="no-photos" class="empty-state"><span aria-hidden="true">◇</span><h3>Le premier souvenir vous appartient.</h3><p>Ajoutez vos photos, puis retrouvez-les une par une dans votre atelier.</p></div>
+
+        <div id="photo-workspace" hidden>
+          <div class="photo-workspace-title studio-photo-toolbar">
+            <div class="studio-photo-name"><span class="eyebrow" id="current-photo-index">PHOTO 01</span><h2 id="current-photo-name">Votre souvenir</h2></div>
+            <nav class="photo-navigation" aria-label="Parcourir les photos"><button id="prev-photo" class="photo-nav-button" type="button" aria-label="Photo précédente">←</button><span id="current-photo-position" aria-live="polite" aria-atomic="true">Photo 1 sur 8</span><button id="next-photo" class="photo-nav-button" type="button" aria-label="Photo suivante">→</button></nav>
+            <button id="remove-photo" class="button button-quiet danger-text" type="button">Retirer</button>
+          </div>
+          <div class="studio-layout">
+            <div class="studio-canvas">
+              <div class="comparison-grid studio-comparison">
+                <article class="image-panel original-panel"><div class="panel-header"><h3>Votre photo</h3><span class="panel-tag">Originale</span></div><div class="image-stage"><img id="source-image" alt="Photo originale sélectionnée"><span class="image-corner-label">LE SOUVENIR</span></div><p class="image-caption">Votre photo reste la référence.</p></article>
+                <article class="image-panel illustration-panel"><div class="panel-header"><h3>Votre dessin</h3><div class="result-tabs" role="tablist" aria-label="Afficher le dessin"><button type="button" role="tab" id="tab-solution" data-view="solution_final" aria-selected="true">Colorié</button><button type="button" role="tab" id="tab-mystery" data-view="mystery" aria-selected="false">À colorier</button><button type="button" role="tab" id="tab-reveal" data-view="reveal_50" aria-selected="false" hidden>Révélation</button></div></div><div class="image-stage" id="result-stage" role="tabpanel" aria-labelledby="tab-solution"><img id="result-image" alt="Aperçu du dessin sélectionné" hidden><div id="result-placeholder" class="result-placeholder"><span aria-hidden="true">✧</span><h4>Et si votre souvenir<br>devenait un dessin ?</h4><p>Un clic sur l’univers de votre choix pour commencer.</p></div><button id="favorite-current" class="favorite-current" type="button" aria-label="Garder ce dessin dans mes favoris" aria-pressed="false" disabled><span aria-hidden="true">♡</span></button><button id="enlarge-result" class="image-expand" aria-label="Agrandir le dessin" type="button" hidden>⤢</button><span class="image-corner-label" id="result-label" hidden>APERÇU COLORIÉ</span></div><div class="drawing-footer"><p class="image-caption" id="result-caption">Choisissez un univers, le reste est déjà réglé.</p><a id="detail-guide-link" class="detail-guide-link" download hidden>Guides des petits détails · codes agrandis ↗</a><p id="drawing-kind-note" class="drawing-kind-note" hidden></p><button id="create-premium-button" class="button button-outline create-premium-button" type="button" hidden>Créer le dessin illustré <span aria-hidden="true">✧</span></button><button id="select-current" class="button button-primary select-current" type="button" disabled>Choisir pour mon livre <span aria-hidden="true">✓</span></button></div></article>
+              </div>
+              <div id="generation-progress" class="generation-progress" role="status" aria-live="polite" hidden><span class="working-orbit" aria-hidden="true"></span><div><strong id="generation-message">Votre dessin prend forme…</strong><p id="generation-detail">Votre photo reste disponible pendant la création.</p></div><progress id="job-progress" max="100" value="0" aria-label="Progression de la création"></progress></div>
+              <div id="qa-panel" class="qa-panel" hidden></div>
+            </div>
+            <aside class="studio-universes" aria-labelledby="universe-heading">
+              <div class="universe-heading"><span class="eyebrow">À VOUS DE CHOISIR</span><h2 id="universe-heading">Votre univers</h2><p>Un clic pour créer votre dessin.</p></div>
+              <div class="universe-tabs" role="tablist" aria-label="Personnaliser le dessin">
+                <button id="universe-tab-artistic" type="button" role="tab" data-universe-tab="artistic" aria-controls="universe-rail" aria-selected="true">Univers artistiques</button>
+                <button id="universe-tab-colors" type="button" role="tab" data-universe-tab="palette" aria-controls="universe-rail" aria-selected="false" tabindex="-1">Couleurs</button>
+              </div>
+              <p id="universe-category-note" class="universe-category-note">15 nouveaux univers, et les 3 univers créatifs d’origine.</p>
+              <div id="universe-rail" class="universe-rail" role="tabpanel" aria-labelledby="universe-tab-artistic"></div>
+              <div class="universe-context"><p id="universe-description" aria-live="polite">De nouveaux décors pour raconter vos souvenirs.</p><p id="artwork-mode-note" class="studio-availability">Vérification de la disponibilité du service artistique…</p></div>
+            </aside>
+          </div>
+
+          <details class="studio-advanced"><summary><span>Réglages avancés</span><small>Le rendu est prêt à être créé sans réglage supplémentaire.</small><span class="details-chevron" aria-hidden="true">⌄</span></summary><div class="generation-controls"><div class="artwork-mode-row"><label>Création<select id="artwork-mode"><option value="local">Étude de découpage de la photo</option><option value="premium" disabled>Dessin illustré premium</option></select></label></div><label class="sr-only" hidden>Univers<select id="universe-select"><option value="original">Fidèle à la photo</option></select></label><div class="generation-fields"><label>Détail du coloriage<select id="regions-select"><option value="1600">1 600 zones</option><option value="3200" selected>3 200 zones</option><option value="4500">4 500 zones</option><option value="6000">6 000 zones</option></select></label><label>Effet de surprise<select id="masking-select" aria-describedby="masking-note"><option value="guided">Dessin visible</option><option value="discreet">Surprise douce</option><option value="mystery" selected>Mystère renforcé</option></select></label><label>Niveau de détail<select id="difficulty-select"><option value="relaxed">Détente</option><option value="balanced">Équilibré</option><option value="expert" selected>Minutieux</option></select></label><label>Palette<select id="colors-select"><option value="16">16 couleurs</option><option value="24">24 couleurs</option><option value="32" selected>32 couleurs</option></select></label><label>Cadrage<select id="fit-select"><option value="contain">Photo entière</option><option value="cover">Remplir la page</option></select></label><button id="generate-button" class="button button-outline" type="button">Appliquer ces réglages <span aria-hidden="true">↻</span></button></div><p class="control-tip" id="masking-note">Le mode Mystère atténue les traits tout en conservant les zones et leurs codes.</p></div></details>
+          <section class="variants-section studio-variants" aria-labelledby="variants-title"><div class="section-heading"><div><h2 id="variants-title">Vos dessins, vos coups de cœur</h2><p>Retrouvez vos essais pour cette photo. Un cœur suffit à garder votre préféré.</p></div><div class="variants-heading-actions"><button id="favorites-only" class="favorites-filter" type="button" aria-pressed="false"><span aria-hidden="true">♡</span> Mes favoris</button><span id="selected-label" class="selected-label"></span></div></div><div id="variants-grid" class="variants-grid"></div></section>
+        </div>
+        <div class="stage-actions"><button class="button button-quiet" data-go="1" type="button">← Le livre</button><button class="button button-primary" data-go="3" type="button">Composer mon livre <span aria-hidden="true">→</span></button></div>
+      </section>
+
+      <section id="stage-3" class="stage" aria-labelledby="title-3" hidden>
+        <p class="overline">UN LIVRE, VOTRE FAÇON DE RACONTER.</p><h1 id="title-3">Trouvez le fil de votre <em>histoire.</em></h1><p class="lede compact">Un ordre chronologique, une surprise, un souvenir préféré pour commencer. Déplacez vos pages comme vous le souhaitez.</p>
+        <div class="composition-summary" id="composition-summary"></div>
+        <div id="page-order" class="page-order" aria-label="Ordre des illustrations"></div>
+        <div class="note-card"><span aria-hidden="true">✧</span><p>Les pages à colorier et leurs nuanciers composent le livre. Les solutions coloriées sont réunies dans un document séparé pour préserver la surprise.</p></div>
+        <div class="stage-actions"><button class="button button-quiet" data-go="2" type="button">← Mes souvenirs</button><button class="button button-primary" data-go="4" type="button">Préparer mon cadeau <span aria-hidden="true">→</span></button></div>
+      </section>
+
+      <section id="stage-4" class="stage" aria-labelledby="title-4" hidden>
+        <p class="overline">BIENTÔT, LE PLAISIR D’OFFRIR.</p><h1 id="title-4">Une attention qui ne ressemble<br>qu’à <em>vous.</em></h1><p class="lede compact">Vérifiez les derniers détails et préparez le dossier de votre livre personnalisé.</p>
+        <div class="gift-layout"><div class="gift-preview-area"><div id="gift-book" class="gift-book heritage"><div class="gift-inner-border"><span class="book-kicker">COLLECTION COLORART</span><span class="gift-ornament">❦</span><h2 id="gift-title">Nos plus beaux souvenirs</h2><div id="gift-cover-picture" class="gift-cover-picture"><span>✧</span></div><p id="gift-recipient">UN LIVRE RIEN QUE POUR VOUS</p><span class="gift-bottom">UNE HISTOIRE À COLORIER</span></div></div><span class="preview-caption">Aperçu de la collection · couverture exportée séparément</span></div><div class="gift-details"><span class="eyebrow">VOTRE CADEAU, EN QUELQUES DÉTAILS</span><h2 id="gift-summary-title">Un livre personnel</h2><dl class="gift-facts" id="gift-facts"></dl><div class="dedication-preview"><span class="eyebrow">VOTRE DÉDICACE</span><p id="gift-dedication">Un mot personnel rendra ce cadeau encore plus précieux.</p><button class="text-link" data-go="1" type="button">Modifier mes textes ↗</button></div><div id="readiness-checklist" class="readiness-checklist"></div></div></div>
+        <div class="proof-panel"><div><h2>Le dernier regard avant de l’offrir</h2><p>Vérifiez le cadrage, la ressemblance, les codes et les textes. Un essai papier reste nécessaire pour confirmer le confort de coloriage et les couleurs de vos fournitures.</p></div><button id="proof-button" class="button button-outline" type="button">Feuilleter mes illustrations <span aria-hidden="true">↗</span></button></div>
+        <label class="approval-checkbox"><input id="approval-checkbox" type="checkbox"><span>J’ai vérifié les illustrations sélectionnées, l’ordre des pages et mes textes. Je souhaite préparer cette version du livre.</span></label>
+        <div class="export-panel"><div><span class="eyebrow">VOTRE LIVRE À EMPORTER</span><h2>Préparer le dossier d’impression</h2><p>Intérieur à colorier, couverture, solutions séparées et récapitulatif. Le raccordement à un imprimeur et le paiement ne sont pas activés dans cet atelier.</p></div><button id="export-button" class="button button-primary" type="button" disabled>Générer mon livre <span aria-hidden="true">↓</span></button></div>
+        <div id="export-status" class="inline-status" role="status" hidden></div><div id="export-downloads" class="export-downloads" hidden></div>
+        <div class="print-request-panel" id="print-request-panel" hidden><div><h3>Préparer une demande d’impression</h3><p>Enregistrez un récapitulatif de cette version. Aucune commande ni aucun paiement ne sont transmis.</p></div><button id="print-request-button" class="button button-outline" type="button">Préparer ma demande</button></div>
+        <div class="stage-actions"><button class="button button-quiet" data-go="3" type="button">← La composition</button><span class="subtle">Votre histoire mérite un dernier regard.</span></div>
+      </section>
+      <footer class="main-footer"><span class="brand-word">ColorArt</span><span>Les souvenirs se racontent aussi en couleurs.</span></footer>
+    </main>
+  </div>
+
+  <div id="toasts" class="toasts" aria-live="polite" aria-atomic="false"></div>
+  <dialog id="confirm-dialog"><form method="dialog"><button class="dialog-close" value="cancel" aria-label="Fermer">×</button><span class="eyebrow" id="confirm-eyebrow">VOTRE CRÉATION</span><h2 id="confirm-title">Confirmer votre choix</h2><div id="confirm-description"></div><div class="dialog-actions"><button class="button button-quiet" value="cancel">Annuler</button><button id="confirm-accept" class="button button-primary" value="confirm">Confirmer</button></div></form></dialog>
+  <dialog id="proof-dialog" class="proof-dialog"><button id="proof-close" class="dialog-close" aria-label="Fermer l’aperçu" type="button">×</button><div class="proof-toolbar"><button id="proof-prev" class="button button-outline" type="button" aria-label="Illustration précédente">←</button><div><span class="eyebrow" id="proof-index">ILLUSTRATION 1</span><h2 id="proof-title">Votre illustration</h2></div><button id="proof-next" class="button button-outline" type="button" aria-label="Illustration suivante">→</button></div><div class="proof-image-grid"><figure><figcaption>Photo originale</figcaption><img id="proof-source" alt="Photo originale de la page affichée"></figure><figure><figcaption>Résultat colorié</figcaption><img id="proof-solution" alt="Résultat colorié de la page affichée"></figure><figure><figcaption>Page à colorier</figcaption><img id="proof-mystery" alt="Version numérotée de la page affichée"></figure></div></dialog>
+  <dialog id="help-dialog"><button id="help-close" class="dialog-close" aria-label="Fermer l’aide" type="button">×</button><span class="eyebrow">BIENVENUE DANS L’ATELIER</span><h2>Du souvenir au cadeau</h2><ol class="help-list"><li><strong>Choisissez votre livre.</strong> Une collection, un titre et un mot personnel.</li><li><strong>Transformez vos photos.</strong> Explorez les univers et comparez le résultat à la photo originale.</li><li><strong>Choisissez chaque illustration.</strong> Les favoris gardent vos essais ; la validation choisit la page du livre.</li><li><strong>Composez et vérifiez.</strong> Organisez vos pages et téléchargez les documents séparés.</li></ol><p class="subtle">La préparation des zones est locale. Lorsque le service artistique est activé, le dessin premium est créé à partir de votre photo avant ce découpage. Les univers artistiques créent des décors et des illustrations thématiques ; l’onglet Couleurs propose des harmonies sur une même scène. La fidélité et le confort de coloriage se vérifient visuellement avant de préparer votre livre.</p></dialog>
+</body>
+</html>
