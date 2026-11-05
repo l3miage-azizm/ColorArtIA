@@ -60,5 +60,68 @@ jobs:
 
           html = get("/").decode("utf-8",errors="replace")
           assert "<html" in html.lower(), "Home page is not HTML"
-          print("RENDER_SMOKE_OK (health, catalog, home). NO image was generated.")
+          # Exercise a minimal anonymous user journey with synthetic pixels.
+          # This test NEVER invokes any AI provider.
+          from http.cookiejar import CookieJar
+          from io import BytesIO
+          import uuid
+          import struct
+          import zlib
+
+          jar = CookieJar()
+          opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+          book_id = None
+
+          def req(path, method="GET", body=None, headers=None, expected=200):
+              request = urllib.request.Request(base + path, data=body, method=method,
+                                               headers=headers or {})
+              with opener.open(request, timeout=100) as response:
+                  result = response.read(1_500_000)
+                  print("FLOW", method, path.split("?")[0][:70], response.status,
+                        "bytes", len(result))
+                  assert response.status == expected
+                  return result
+
+          def make_png():
+              # 640x800 synthetic RGB image; no real photographs or personal data.
+              w, h = 640, 800
+              raw = bytearray()
+              for y in range(h):
+                  raw.append(0)
+                  for x in range(w):
+                      raw.extend((230 if 90 < x < 550 else 120,
+                                  160 if 100 < y < 670 else 200,
+                                  (x + y) % 225))
+              def chunk(tag, body):
+                  return (struct.pack(">I", len(body)) + tag + body +
+                          struct.pack(">I", zlib.crc32(tag + body) & 0xffffffff))
+              return (b"\\x89PNG\\r\\n\\x1a\\n" +
+                      chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0)) +
+                      chunk(b"IDAT", zlib.compress(bytes(raw), 6)) +
+                      chunk(b"IEND", b""))
+
+          try:
+              book = json.loads(req("/api/books", "POST",
+                  json.dumps({"title":"Smoke test synthetic (temporary)",
+                              "target_photos":1}).encode("utf-8"),
+                  {"Content-Type":"application/json"}, 201))
+              book_id = book["id"]
+              boundary = "Smoke" + uuid.uuid4().hex
+              part = (("--" + boundary + "\\r\\n"
+                       'Content-Disposition: form-data; name="files"; filename="synthetic.png"\\r\\n'
+                       "Content-Type: image/png\\r\\n\\r\\n").encode() +
+                      make_png() + ("\\r\\n--" + boundary + "--\\r\\n").encode())
+              result = json.loads(req("/api/books/" + book_id + "/photos", "POST", part,
+                  {"Content-Type":"multipart/form-data; boundary=" + boundary}, 200))
+              assert result.get("book", {}).get("photo_count") == 1
+              page = result["book"]["pages"][0]
+              photo_data = req(page["thumbnail_url"])
+              assert len(photo_data) > 100
+              print("SMOKE_USER_FLOW_OK: create book -> upload -> thumbnail")
+          finally:
+              if book_id:
+                  req("/api/books/" + book_id, "DELETE", expected=204)
+                  print("SMOKE_TEMPORARY_BOOK_DELETED")
+
+          print("RENDER_SMOKE_OK (health, catalog, home, temporary book and upload). NO AI image was generated.")
           PY
