@@ -1,0 +1,61 @@
+name: Render production smoke test (read-only)
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - feature/cloudflare-workers-ai-klein
+    paths:
+      - .github/workflows/render-smoke.yml
+
+permissions:
+  contents: read
+
+jobs:
+  production-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check public Render instance without creating images or spending credits
+        env:
+          BASE_URL: https://colorartia.onrender.com
+        run: |
+          python - <<'PY'
+          import json, os, time, urllib.request, urllib.error
+
+          base = os.environ["BASE_URL"]
+          def get(path):
+              url = base + path
+              last = None
+              for attempt in range(3):
+                  try:
+                      with urllib.request.urlopen(
+                          urllib.request.Request(url, headers={"User-Agent":"ColorArtIA-GitHub-Smoke/1"}),
+                          timeout=100
+                      ) as response:
+                          body = response.read(2_000_000)
+                          print(path, "HTTP", response.status, "length", len(body))
+                          assert response.status == 200, f"{path}: unexpected HTTP {response.status}"
+                          return body
+                  except Exception as exc:
+                      last = exc
+                      print(f"{path}: attempt {attempt+1}/3 failed: {type(exc).__name__}: {exc}")
+                      if attempt < 2:
+                          time.sleep(5)
+              raise RuntimeError(f"Unreachable {path}: {last}")
+
+          health = json.loads(get("/api/health"))
+          print("HEALTH:", health)
+          assert health.get("status") == "ok", "Unhealthy backend"
+
+          catalog = json.loads(get("/api/catalog"))
+          print("CATALOG: artistic_enabled=", catalog.get("artistic_enabled"),
+                "universes=", len(catalog.get("universes", [])),
+                "templates=", len(catalog.get("templates", [])))
+          assert isinstance(catalog.get("universes"), list), "No universes"
+          assert len(catalog.get("universes", [])) > 0
+
+          html = get("/").decode("utf-8",errors="replace")
+          assert "<html" in html.lower(), "Home page is not HTML"
+          print("RENDER_SMOKE_OK (health, catalog, home). NO image was generated.")
+          PY
