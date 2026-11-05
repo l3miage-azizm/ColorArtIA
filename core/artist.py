@@ -34,6 +34,10 @@ PROMPT_VERSION = "colorart-line-drawing-2"
 ART_PROMPT_VERSION = "colorart-art-worlds-1"
 GATEWAY_BASE_URL = "https://ai-gateway.vercel.sh/v1"
 GATEWAY_DEFAULT_MODEL = "openai/gpt-image-2"
+CLOUDFLARE_MODEL = "@cf/black-forest-labs/flux-2-klein-4b"
+CLOUDFLARE_API_ROOT = "https://api.cloudflare.com/client/v4/accounts"
+# Cloudflare requires each input reference image to be smaller than 512x512.
+CLOUDFLARE_REFERENCE_MAX_SIDE = 496
 MAX_STATUS_BYTES = 64 * 1024
 TOTAL_TIMEOUT_SECONDS = 165
 MAX_INPUT_BYTES = 20 * 1024 * 1024
@@ -124,6 +128,19 @@ def _configuration(*, local_mock: bool = False) -> _Configuration:
         base = os.environ.get("COLORART_IMAGE_BASE_URL", "https://api.openai.com/v1").strip().rstrip("/")
         model = os.environ.get("COLORART_IMAGE_MODEL", "gpt-image-1.5").strip()
         model_pattern = r"[A-Za-z0-9._-]{1,100}"
+    elif provider == "cloudflare":
+        key = os.environ.get("CLOUDFLARE_API_TOKEN", "").strip()
+        account_id = os.environ.get("CLOUDFLARE_ACCOUNT_ID", "").strip()
+        if not re.fullmatch(r"[a-fA-F0-9]{32}", account_id):
+            raise ArtistError("L’identifiant du compte Cloudflare est invalide.", "invalid_configuration")
+        # Do not allow a configurable host or model to receive the Cloudflare token.
+        if os.environ.get("COLORART_IMAGE_BASE_URL"):
+            raise ArtistError("Supprime COLORART_IMAGE_BASE_URL pour utiliser Cloudflare.", "invalid_configuration")
+        model = os.environ.get("COLORART_IMAGE_MODEL", CLOUDFLARE_MODEL).strip()
+        if model != CLOUDFLARE_MODEL:
+            raise ArtistError("Le modèle Cloudflare configuré n’est pas autorisé.", "invalid_configuration")
+        base = f"{CLOUDFLARE_API_ROOT}/{account_id}/ai/run"
+        model_pattern = re.escape(CLOUDFLARE_MODEL)
     else:
         raise ArtistError("Le service de dessin n’est pas correctement configuré.", "invalid_configuration")
     if not key:
@@ -220,8 +237,9 @@ async def gateway_readiness(*, transport=None) -> dict:
     not visual quality, per-model access, or the outcome of a future charged call.
     Direct-provider configuration retains its historical local readiness check.
     """
-    provider = ("vercel_gateway" if os.environ.get("COLORART_IMAGE_PROVIDER", "").strip().lower()
-                == "vercel_gateway" else "openai")
+    provider = os.environ.get("COLORART_IMAGE_PROVIDER", "openai").strip().lower()
+    if provider not in {"vercel_gateway", "cloudflare"}:
+        provider = "openai"
 
     def status(available: bool, reason: str, action_url: str | None = None) -> dict:
         return {"available": available, "provider": provider, "reason": reason, "action_url": action_url}
@@ -292,7 +310,46 @@ def _normalized_photo(path: Path) -> tuple[bytes, str]:
     return normalized, hashlib.sha256(original).hexdigest()
 
 
+def _cloudflare_reference(content: bytes) -> bytes:
+    """Reduce a local photo to a private, metadata-free Cloudflare reference."""
+    with Image.open(BytesIO(content)) as image:
+        image = image.convert("RGB")
+        image.thumbnail((CLOUDFLARE_REFERENCE_MAX_SIDE, CLOUDFLARE_REFERENCE_MAX_SIDE),
+                        Image.Resampling.LANCZOS)
+        output = BytesIO()
+        image.save(output, format="PNG")
+        return output.getvalue()
+
+
+async def _request_cloudflare(config: _Configuration, content: bytes, transport, *, prompt: str) -> bytes:
+    """Use Cloudflare's pinned multipart edit endpoint, never a text-to-image fallback."""
+    reference = _cloudflare_reference(content)
+    prompt = ("Use the attached input image 0 as the ONLY visual reference for the people, "
+              "faces, pose, clothing, objects and original scene. "
+              "Do not invent or replace a person. " + prompt)
+    try:
+        async with asyncio.timeout(TOTAL_TIMEOUT_SECONDS):
+            async with httpx.AsyncClient(transport=transport, follow_redirects=False,
+                    timeout=httpx.Timeout(150.0, connect=10.0, write=20.0, pool=5.0)) as client:
+                async with client.stream("POST", config.base_url + "/" + config.model,
+                        headers={"Authorization": "Bearer " + config.api_key, "Accept": "application/json"},
+                        data={"prompt": prompt, "width": "1024", "height": "1536"},
+                        files={"input_image_0": ("reference.png", reference, "image/png")}) as response:
+                    if not 200 <= response.status_code < 300:
+                        body = await _response_body(response, MAX_STATUS_BYTES)
+                        raise _provider_failure(response.status_code, body, config)
+                    if response.headers.get("content-type", "").split(";")[0].strip().lower() != "application/json":
+                        raise ArtistError("Le service de dessin a renvoyé un résultat incomplet.", "invalid_response")
+                    return await _response_body(response, MAX_RESPONSE_BYTES)
+    except (TimeoutError, httpx.TimeoutException):
+        raise ArtistError("La création du dessin n’a pas pu être confirmée dans le délai prévu. Ta photo est conservée ; aucune relance automatique n’a été effectuée.", "timeout") from None
+    except httpx.HTTPError:
+        raise ArtistError("Le service de dessin ne répond pas. Ta photo et tes essais sont conservés.", "connection_failed") from None
+
+
 async def _request(config: _Configuration, content: bytes, transport, *, prompt: str = ILLUSTRATION_PROMPT) -> bytes:
+    if config.provider == "cloudflare":
+        return await _request_cloudflare(config, content, transport, prompt=prompt)
     data = {"model": config.model, "prompt": prompt, "n": "1",
             "size": "1024x1536", "quality": "high",
             "output_format": "png", "background": "opaque"}
@@ -319,13 +376,21 @@ async def _request(config: _Configuration, content: bytes, transport, *, prompt:
         raise ArtistError("Le service de dessin ne répond pas. Ta photo et tes essais sont conservés.", "connection_failed") from None
 
 
-def _validated_artwork(body: bytes) -> bytes:
+def _validated_artwork(body: bytes, *, provider: str = "openai") -> bytes:
     try:
         payload = json.loads(body)
-        values = payload.get("data") if isinstance(payload, dict) else None
-        if not isinstance(values, list) or len(values) != 1 or not isinstance(values[0], dict):
-            raise ValueError()
-        encoded = values[0].get("b64_json")
+        if provider == "cloudflare":
+            if not isinstance(payload, dict) or payload.get("success") is not True:
+                raise ValueError()
+            cf_result = payload.get("result")
+            if not isinstance(cf_result, dict):
+                raise ValueError()
+            encoded = cf_result.get("image")
+        else:
+            values = payload.get("data") if isinstance(payload, dict) else None
+            if not isinstance(values, list) or len(values) != 1 or not isinstance(values[0], dict):
+                raise ValueError()
+            encoded = values[0].get("b64_json")
         if not isinstance(encoded, str) or not encoded:
             # URL responses are intentionally not downloaded (no second network
             # target and no client/provider-controlled URL fetch).
@@ -336,7 +401,8 @@ def _validated_artwork(body: bytes) -> bytes:
         with warnings.catch_warnings():
             warnings.simplefilter("error", Image.DecompressionBombWarning)
             with Image.open(BytesIO(raw)) as image:
-                if image.format != "PNG" or min(image.size) < 128 or image.width * image.height > MAX_IMAGE_PIXELS:
+                permitted_formats = {"PNG", "JPEG", "WEBP"} if provider == "cloudflare" else {"PNG"}
+                if image.format not in permitted_formats or min(image.size) < 128 or image.width * image.height > MAX_IMAGE_PIXELS:
                     raise ValueError()
                 image.load()
                 # Store a clean, opaque PNG, never provider-supplied EXIF/text.
@@ -371,7 +437,7 @@ def create_illustration(source_path: str | Path, output_dir: str | Path,
     config = _configuration(local_mock=isinstance(transport, httpx.MockTransport))
     content, original_hash = _normalized_photo(Path(source_path))
     response = asyncio.run(_request(config, content, transport, prompt=prompt))
-    artwork = _validated_artwork(response)
+    artwork = _validated_artwork(response, provider=config.provider)
     destination = Path(output_dir)
     destination.mkdir(parents=True, exist_ok=True)
     final = destination / ("illustration_" + uuid.uuid4().hex + ".png")
@@ -389,6 +455,7 @@ def create_illustration(source_path: str | Path, output_dir: str | Path,
         raise
     return {"path": final, "provenance": {
             "provider": ("vercel-ai-gateway-images-edit" if config.provider == "vercel_gateway"
+                         else "cloudflare-workers-ai-flux-edit" if config.provider == "cloudflare"
                          else "openai-compatible-images-edit"),
             "model": config.model, "universe_key": universe_key,
             "prompt_version": ART_PROMPT_VERSION if artistic else PROMPT_VERSION,
