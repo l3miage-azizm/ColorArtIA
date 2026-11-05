@@ -1,0 +1,38 @@
+name: Cloudflare provider checks
+
+on:
+  push:
+    branches:
+      - feature/cloudflare-workers-ai-klein
+    paths:
+      - core/artist.py
+      - tests/test_cloudflare_artist.py
+      - .github/workflows/cloudflare-provider.yml
+  pull_request:
+    paths:
+      - core/artist.py
+      - tests/test_cloudflare_artist.py
+      - .github/workflows/cloudflare-provider.yml
+
+permissions:
+  contents: read
+
+jobs:
+  provider-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install application and test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.lock pytest
+      - name: Test provider without any Cloudflare credentials
+        run: python -m pytest tests/test_cloudflare_artist.py -q
+      - name: Compile provider and run existing suite
+        run: |
+          python -m py_compile core/artist.py
+          python -m pytest tests/ -q
