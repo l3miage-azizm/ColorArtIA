@@ -29,7 +29,7 @@ jobs:
       - name: Install application and test dependencies
         run: |
           python -m pip install --upgrade pip
-          python -m pip install -r requirements.lock pytest
+          python -m pip install -r requirements.lock pytest pypdf
       - name: Test provider without any Cloudflare credentials
         run: python -m pytest tests/test_cloudflare_artist.py -q
       - name: Compile provider and run existing suite
