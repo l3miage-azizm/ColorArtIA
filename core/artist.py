@@ -324,6 +324,9 @@ def _cloudflare_reference(content: bytes) -> bytes:
 async def _request_cloudflare(config: _Configuration, content: bytes, transport, *, prompt: str) -> bytes:
     """Use Cloudflare's pinned multipart edit endpoint, never a text-to-image fallback."""
     reference = _cloudflare_reference(content)
+    prompt = ("Use the attached input image 0 as the ONLY visual reference for the people, "
+              "faces, pose, clothing, objects and original scene. "
+              "Do not invent or replace a person. " + prompt)
     try:
         async with asyncio.timeout(TOTAL_TIMEOUT_SECONDS):
             async with httpx.AsyncClient(transport=transport, follow_redirects=False,
