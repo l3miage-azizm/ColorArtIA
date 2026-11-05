@@ -95,7 +95,7 @@ jobs:
               def chunk(tag, body):
                   return (struct.pack(">I", len(body)) + tag + body +
                           struct.pack(">I", zlib.crc32(tag + body) & 0xffffffff))
-              return (b"\\x89PNG\\r\\n\\x1a\\n" +
+              return (b"\x89PNG\r\n\x1a\n" +
                       chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 2, 0, 0, 0)) +
                       chunk(b"IDAT", zlib.compress(bytes(raw), 6)) +
                       chunk(b"IEND", b""))
@@ -107,10 +107,10 @@ jobs:
                   {"Content-Type":"application/json"}, 201))
               book_id = book["id"]
               boundary = "Smoke" + uuid.uuid4().hex
-              part = (("--" + boundary + "\\r\\n"
-                       'Content-Disposition: form-data; name="files"; filename="synthetic.png"\\r\\n'
-                       "Content-Type: image/png\\r\\n\\r\\n").encode() +
-                      make_png() + ("\\r\\n--" + boundary + "--\\r\\n").encode())
+              part = (("--" + boundary + "\r\n"
+                       'Content-Disposition: form-data; name="files"; filename="synthetic.png"\r\n'
+                       "Content-Type: image/png\r\n\r\n").encode() +
+                      make_png() + ("\r\n--" + boundary + "--\r\n").encode())
               result = json.loads(req("/api/books/" + book_id + "/photos", "POST", part,
                   {"Content-Type":"multipart/form-data; boundary=" + boundary}, 200))
               assert result.get("book", {}).get("photo_count") == 1
